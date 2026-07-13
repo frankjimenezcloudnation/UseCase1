@@ -1,19 +1,34 @@
-import { Box, Container, Flex, Heading, Spacer } from "@chakra-ui/react";
-import { ColorModeButton } from "@/components/ui/color-mode";
-import { ItemsPage } from "@/pages/ItemsPage";
+import { Box, Container, Flex, Text } from "@chakra-ui/react";
+import { ComparisonPage } from "@/pages/ComparisonPage";
 
 export default function App() {
   return (
-    <Box minH="100vh">
-      <Flex as="header" align="center" px={6} py={4} borderBottomWidth="1px">
-        <Heading size="md">UseCase1</Heading>
-        <Spacer />
-        <ColorModeButton />
+    <Box minH="100vh" bg="bg.canvas">
+      <Flex
+        as="header"
+        align="center"
+        gap={3}
+        px={{ base: 5, md: 10 }}
+        py={4}
+        bg="black"
+        color="white"
+      >
+        <Box w="10px" h="26px" bg="marvel.400" borderRadius="sm" />
+        <Text fontFamily="heading" fontWeight="700" fontSize="lg" letterSpacing="-0.01em">
+          CloudNation
+        </Text>
+        <Text color="whiteAlpha.700" fontSize="sm">
+          · WTP Pension Prototyping Engine
+        </Text>
       </Flex>
 
-      <Container maxW="3xl" py={10}>
-        <ItemsPage />
+      <Container maxW="5xl" py={{ base: 8, md: 12 }}>
+        <ComparisonPage />
       </Container>
+
+      <Box as="footer" textAlign="center" py={8} color="fg.muted" fontSize="xs">
+        Enable. Empower. Deliver. — prototype, semantische analyse Wtp-transitie
+      </Box>
     </Box>
   );
 }

@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/client.ts","./src/api/items.ts","./src/components/ui/color-mode.tsx","./src/components/ui/provider.tsx","./src/pages/itemspage.tsx"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/theme.ts","./src/vite-env.d.ts","./src/api/analysis.ts","./src/api/client.ts","./src/components/documentselector.tsx","./src/components/entitlementcard.tsx","./src/components/summarypanel.tsx","./src/components/ui/provider.tsx","./src/lib/severity.ts","./src/pages/comparisonpage.tsx"],"version":"5.9.3"}

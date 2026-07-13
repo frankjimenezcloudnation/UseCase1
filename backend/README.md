@@ -1,8 +1,14 @@
-# UseCase1 — Backend (FastAPI)
+# Backend — WTP Pension Prototyping Engine (Use Case 1)
+
+FastAPI service that implements **Use Case 1: Fondsreglement vs. Standaardproduct**.
+It ingests a pension fund's unstructured corpus (FPR, ABTN, Operating Manual,
+Transitieplan, Implementatieplan) and compares it against the standard Wtp product
+(IG&H AllVida / Feniqs Qwik + the ontology snapshot), using **Anthropic Claude**
+structured outputs to emit a typed `FundComparisonReport` with source provenance.
 
 ## Requirements
 
-- Python **3.11–3.13** (3.14 is not yet supported by the pinned pydantic/Rust toolchain)
+- Python **3.11–3.13** (3.14 not yet supported by the pinned pydantic/Rust toolchain)
 
 ## Setup
 
@@ -11,7 +17,7 @@ cd backend
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env      # add your Anthropic key (ANTHROPIC_API_KEY or ATP)
 ```
 
 ## Run
@@ -20,9 +26,12 @@ cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-- API: http://localhost:8000/api/v1
-- Interactive docs (Swagger): http://localhost:8000/docs
-- Health check: http://localhost:8000/api/v1/health
+- Swagger UI: http://localhost:8000/docs
+- `GET  /api/v1/analysis/documents` — list the classified fund + benchmark corpus
+- `POST /api/v1/analysis/compare`   — run the entitlement audit (Claude)
+
+Without an Anthropic key the compare endpoint returns a **grounded demo report**
+so the UI is fully demonstrable; the `mode` field reports `live` vs `demo`.
 
 ## Test
 
@@ -30,19 +39,17 @@ uvicorn app.main:app --reload
 pytest
 ```
 
-## Structure
+## How it works
 
 ```
 app/
-  main.py            # App factory, CORS, router wiring
-  core/config.py     # Settings (env-driven, pydantic-settings)
-  api/
-    router.py        # Aggregates all route modules under /api/v1
-    routes/          # Endpoint modules (health, items, ...)
-  schemas/           # Pydantic request/response models
-  services/          # Business logic (item_service is in-memory; swap for a DB)
-tests/               # pytest + FastAPI TestClient
+  services/
+    documents.py        # scans DOCUMENTS_DIR, classifies files (fund | benchmark)
+    extraction.py       # PDF (page-tagged) / DOCX / XLSX -> text
+    claude_analysis.py  # builds the prompt, calls messages.parse(FundComparisonReport)
+  schemas/comparison.py # the structured-output schema (per the WTP tech spec)
+  api/routes/analysis.py
 ```
 
-To add a resource: create a schema in `schemas/`, a service in `services/`, a
-route module in `api/routes/`, then register it in `api/router.py`.
+`DOCUMENTS_DIR` defaults to the `UseCase1/` project root, where the sample
+SPF/DPF documents live. Point it elsewhere to analyse a different corpus.

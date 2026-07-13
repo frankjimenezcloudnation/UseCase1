@@ -1,6 +1,11 @@
 from functools import lru_cache
+from pathlib import Path
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# backend/app/core/config.py -> project root (UseCase1/) that holds the reference PDFs/docx/xlsx
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
@@ -12,18 +17,39 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    PROJECT_NAME: str = "UseCase1 API"
+    PROJECT_NAME: str = "WTP Pension Prototyping Engine — Use Case 1"
     API_V1_PREFIX: str = "/api/v1"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
-    # Comma-separated list of allowed CORS origins, e.g.
-    # BACKEND_CORS_ORIGINS="http://localhost:5173,http://localhost:3000"
-    BACKEND_CORS_ORIGINS: str = "http://localhost:5173"
+    BACKEND_CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+
+    # --- AI (Anthropic Claude) ---
+    # Reads the key from ANTHROPIC_API_KEY or the ATP alias in backend/.env.
+    ANTHROPIC_API_KEY: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("ANTHROPIC_API_KEY", "ATP"),
+    )
+    CLAUDE_MODEL: str = "claude-opus-4-8"
+    # Per-document character cap fed to the model (keeps latency/cost bounded).
+    MAX_DOC_CHARS: int = 60_000
+
+    # Directory that holds the fund + benchmark source documents.
+    DOCUMENTS_DIR: str = str(_REPO_ROOT)
 
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.BACKEND_CORS_ORIGINS.split(",") if o.strip()]
+
+    @property
+    def documents_path(self) -> Path:
+        return Path(self.DOCUMENTS_DIR)
+
+    @property
+    def has_ai_credentials(self) -> bool:
+        import os
+
+        return bool(self.ANTHROPIC_API_KEY or os.environ.get("ANTHROPIC_API_KEY"))
 
 
 @lru_cache

@@ -1,46 +1,42 @@
-# UseCase1 — Frontend (React + TypeScript + Chakra UI)
+# Frontend — WTP Pension Prototyping Engine (Use Case 1)
 
-Built with Vite, React 19, TypeScript, and Chakra UI v3.
+React + TypeScript + Chakra UI v3 (Vite), styled with the **CloudNation** brand
+system (Marvelblauw, Pastinaak, Epilogue/Mulish). It drives the Use Case 1
+comparison: select the fund + benchmark documents, run the analysis, and read the
+`FundComparisonReport` — per-area gaps, severity, actuarial impact, proposed Qwik
+config, and collapsible source provenance.
 
 ## Setup
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env   # optional — defaults use the dev proxy
 ```
 
 ## Run
 
 ```bash
-npm run dev
+npm run dev            # http://localhost:5173
 ```
 
-Opens http://localhost:5173. API calls to `/api/*` are proxied to the FastAPI
-backend at http://localhost:8000 (see `vite.config.ts`). Start the backend too.
+API calls to `/api/*` are proxied to the FastAPI backend at `http://localhost:8000`
+(see `vite.config.ts`) — start the backend too.
 
 ## Build
 
 ```bash
-npm run build     # type-check + production bundle into dist/
-npm run preview   # serve the production build locally
+npm run build          # type-check + production bundle
+npm run preview
 ```
 
 ## Structure
 
 ```
 src/
-  main.tsx                    # Entry point; wraps app in <Provider>
-  App.tsx                     # Layout shell (header + color-mode toggle)
-  api/
-    client.ts                 # Typed fetch wrapper (base URL + /api/v1 prefix)
-    items.ts                  # Items endpoint bindings + types
-  components/ui/
-    provider.tsx              # Chakra + color-mode (next-themes) provider
-    color-mode.tsx            # Light/dark toggle button
-  pages/
-    ItemsPage.tsx             # Demo CRUD page against the backend
+  theme.ts                       # CloudNation brand system (createSystem)
+  api/{client,analysis}.ts       # typed fetch + Use Case 1 endpoints
+  pages/ComparisonPage.tsx       # document selection + run + results
+  components/
+    DocumentSelector.tsx         # fund / benchmark pickers
+    EntitlementCard.tsx          # one comparison area (gap, severity, Qwik config, sources)
 ```
-
-Path alias `@/` maps to `src/`. Configure the API base URL via
-`VITE_API_BASE_URL` (leave empty to use the Vite dev proxy).
