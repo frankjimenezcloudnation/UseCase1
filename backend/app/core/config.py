@@ -34,8 +34,10 @@ class Settings(BaseSettings):
     # Per-document character cap fed to the model (keeps latency/cost bounded).
     MAX_DOC_CHARS: int = 60_000
 
-    # Directory that holds the fund + benchmark source documents.
+    # Directory that holds the built-in fund + benchmark source documents.
     DOCUMENTS_DIR: str = str(_REPO_ROOT)
+    # Writable directory for user-uploaded documents + the metadata override store.
+    UPLOADS_DIR: str = str(_REPO_ROOT / "uploads")
 
     @property
     def cors_origins(self) -> list[str]:
@@ -44,6 +46,10 @@ class Settings(BaseSettings):
     @property
     def documents_path(self) -> Path:
         return Path(self.DOCUMENTS_DIR)
+
+    @property
+    def uploads_path(self) -> Path:
+        return Path(self.UPLOADS_DIR)
 
     @property
     def has_ai_credentials(self) -> bool:
