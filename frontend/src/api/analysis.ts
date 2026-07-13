@@ -31,6 +31,13 @@ export interface ProvisionSource {
 export type Severity = "High" | "Medium" | "Low" | "None";
 export type EvidenceLevel = "Hoog" | "Middel" | "Laag";
 
+export interface OntologyConcept {
+  external_id: string;
+  name: string;
+  definition: string;
+  clarification: string;
+}
+
 export interface EntitlementComparison {
   area: string;
   current_points: string[];
@@ -47,6 +54,7 @@ export interface EntitlementComparison {
   evidence_verified: boolean;
   evidence_score: number;
   evidence_level: EvidenceLevel;
+  ontology_concepts: OntologyConcept[];
 }
 
 export interface FundComparisonReport {

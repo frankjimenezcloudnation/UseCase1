@@ -44,6 +44,16 @@ class ProvisionSource(BaseModel):
     )
 
 
+class OntologyConcept(BaseModel):
+    """A verbatim row from the OntologySnapshot (the single source of truth), shown as visible
+    proof of the standard side. Filled by the backend directly from the Excel — never by the model."""
+
+    external_id: str = Field(default="", description="ExternalId from the snapshot, for lookup")
+    name: str = Field(description="Property/class Name, verbatim")
+    definition: str = Field(default="", description="Definition column, verbatim")
+    clarification: str = Field(default="", description="Clarification column, verbatim")
+
+
 class EntitlementComparison(BaseModel):
     """One thematic comparison between the fund's rules and the standard product."""
 
@@ -111,6 +121,11 @@ class EntitlementComparison(BaseModel):
         description="SYSTEM FIELD — do not set. Band of evidence_score: Hoog (>=80), Middel (50-79), "
         "Laag (<50). Laag findings need expert review.",
     )
+    ontology_concepts: list[OntologyConcept] = Field(
+        default_factory=list,
+        description="SYSTEM FIELD — do not set. Verbatim ontology rows (Name/Definition/"
+        "Clarification) retrieved for this theme, attached by the backend for visible proof.",
+    )
 
 
 class FundComparisonReport(BaseModel):
@@ -119,6 +134,70 @@ class FundComparisonReport(BaseModel):
     fund_name: str
     target_transition_date: str = Field(description="Expected transition date, e.g. '2026-01-01'")
     entitlements: list[EntitlementComparison]
+
+
+# --- LLM output schemas -----------------------------------------------------------------
+# The model emits ONLY these lean shapes (no system-computed fields). Keeping verified/
+# evidence/ontology fields out of the model's schema stops it from (a) inflating the output
+# until the JSON truncates and (b) fabricating trust signals. The backend enriches afterwards.
+
+class ProvisionSourceLLM(BaseModel):
+    document_name: str = Field(description="EXACT filename of the source document")
+    section: str = Field(description="Section or article reference")
+    page_number: int = Field(description="Page number from the '--- page N ---' markers")
+    quote: str = Field(description="VERBATIM text copied from the document")
+
+
+class EntitlementComparisonLLM(BaseModel):
+    area: str
+    current_points: list[str] = Field(default_factory=list)
+    standard_points: list[str] = Field(default_factory=list)
+    key_differences: list[str] = Field(default_factory=list)
+    current_detail: str = ""
+    standard_detail: str = ""
+    gap_detected: bool
+    deviation_severity: Severity
+    impact_explanation: str
+    required_qwik_configuration: str = ""
+    current_sources: list[ProvisionSourceLLM] = Field(default_factory=list)
+    standard_sources: list[ProvisionSourceLLM] = Field(default_factory=list)
+
+    def to_entitlement(self) -> "EntitlementComparison":
+        return EntitlementComparison(
+            area=self.area,
+            current_points=self.current_points,
+            standard_points=self.standard_points,
+            key_differences=self.key_differences,
+            current_detail=self.current_detail,
+            standard_detail=self.standard_detail,
+            gap_detected=self.gap_detected,
+            deviation_severity=self.deviation_severity,
+            impact_explanation=self.impact_explanation,
+            required_qwik_configuration=self.required_qwik_configuration,
+            current_sources=[ProvisionSource(**s.model_dump()) for s in self.current_sources],
+            standard_sources=[ProvisionSource(**s.model_dump()) for s in self.standard_sources],
+        )
+
+
+class ReportMetaLLM(BaseModel):
+    """Report-level metadata extracted in a small parallel call."""
+
+    fund_name: str
+    target_transition_date: str
+
+
+class FundComparisonReportLLM(BaseModel):
+    fund_name: str
+    target_transition_date: str
+    entitlements: list[EntitlementComparisonLLM]
+
+    def to_full(self) -> "FundComparisonReport":
+        """Convert the lean model output into the full report (system fields at defaults)."""
+        return FundComparisonReport(
+            fund_name=self.fund_name,
+            target_transition_date=self.target_transition_date,
+            entitlements=[e.to_entitlement() for e in self.entitlements],
+        )
 
 
 class AnalysisResponse(BaseModel):

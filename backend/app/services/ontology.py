@@ -15,7 +15,6 @@ Two products come out of this module:
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -63,11 +62,14 @@ _SHEETS = ("PROPERTY", "CLASS", "SUBCLASS")
 
 @dataclass
 class Concept:
+    external_id: str
     name: str
     definition: str
+    clarification: str
     domain_values: str
     category: str
-    text: str  # normalised searchable blob
+    sheet: str
+    text: str  # normalised searchable blob (name + definition + clarification + domain + category)
 
 
 def _clean(v) -> str:
@@ -78,7 +80,10 @@ def _clean(v) -> str:
 
 
 def load_concepts(path: Path) -> list[Concept]:
-    """Read Name/Definition/DomainValue/Category from the ontology's main sheets."""
+    """Read ExternalId/Name/Definition/Clarification/DomainValue/Category from the main sheets.
+
+    Definition and Clarification are kept SEPARATE (the frontend shows both verbatim so experts
+    can verify the standard side directly against the single source of truth)."""
     import openpyxl
 
     wb = openpyxl.load_workbook(str(path), read_only=True, data_only=True)
@@ -95,33 +100,40 @@ def load_concepts(path: Path) -> list[Concept]:
         def col(name: str) -> int | None:
             return header.index(name) if name in header else None
 
-        i_name, i_def = col("Name"), col("Definition")
+        i_id, i_name = col("ExternalId"), col("Name")
+        i_def, i_clar = col("Definition"), col("Clarification")
         i_dom, i_cat = col("DomainValue"), col("Category")
-        i_clar, i_goal = col("Clarification"), col("Goal")
+
+        def get(r, i: int | None) -> str:
+            return _clean(r[i]) if i is not None and i < len(r) else ""
+
         for r in rows[1:]:
-            name = _clean(r[i_name]) if i_name is not None and i_name < len(r) else ""
+            name = get(r, i_name)
             if not name:
                 continue
-            definition = _clean(r[i_def]) if i_def is not None and i_def < len(r) else ""
-            clar = _clean(r[i_clar]) if i_clar is not None and i_clar < len(r) else ""
-            goal = _clean(r[i_goal]) if i_goal is not None and i_goal < len(r) else ""
-            dom = _clean(r[i_dom]) if i_dom is not None and i_dom < len(r) else ""
-            cat = _clean(r[i_cat]) if i_cat is not None and i_cat < len(r) else ""
-            definition = " ".join(x for x in (definition, clar, goal) if x)
-            blob = " ".join((name, definition, dom, cat)).lower()
-            concepts.append(Concept(name=name, definition=definition, domain_values=dom,
-                                    category=cat, text=blob))
+            definition = get(r, i_def)
+            clarification = get(r, i_clar)
+            dom = get(r, i_dom)
+            cat = get(r, i_cat)
+            blob = " ".join((name, definition, clarification, dom, cat)).lower()
+            concepts.append(Concept(
+                external_id=get(r, i_id), name=name, definition=definition,
+                clarification=clarification, domain_values=dom, category=cat,
+                sheet=sheet, text=blob,
+            ))
     wb.close()
     return concepts
 
 
 def _render(c: Concept, max_def: int | None = None) -> str:
-    definition = c.definition
-    if max_def is not None and len(definition) > max_def:
-        definition = definition[:max_def].rstrip() + "…"
+    def cap(s: str) -> str:
+        return s[:max_def].rstrip() + "…" if max_def and len(s) > max_def else s
+
     parts = [c.name.replace("_", " ")]
-    if definition:
-        parts.append(f": {definition}")
+    if c.definition:
+        parts.append(f": {cap(c.definition)}")
+    if c.clarification:
+        parts.append(f" — toelichting: {cap(c.clarification)}")
     if c.domain_values:
         parts.append(f" [waarden: {c.domain_values}]")
     if c.category:
@@ -143,31 +155,41 @@ def full_text(concepts: list[Concept], max_chars: int) -> str:
     return "\n".join(out)
 
 
-def retrieve(concepts: list[Concept], per_theme: int = 8, max_def: int = 300) -> str:
-    """Deterministic per-theme retrieval block for the prompt.
+def _top_for_theme(concepts: list[Concept], theme: str, k: int) -> list[Concept]:
+    """Deterministic keyword ranking of concepts for one theme (stable tie-break on name)."""
+    kws = THEME_KEYWORDS.get(theme, [])
+    scored: list[tuple[int, str, Concept]] = []
+    for c in concepts:
+        score = sum(c.text.count(kw) for kw in kws)
+        if score > 0:
+            scored.append((score, c.name, c))
+    scored.sort(key=lambda t: (-t[0], t[1]))
+    return [c for _, _, c in scored[:k]]
 
-    For each canonical theme, score concepts by keyword hits and keep the top matches.
-    Ties are broken by name so the output is byte-stable across runs. Definitions are capped
-    for the prompt (the full text stays in the verification index, so quotes still verify).
-    """
+
+def retrieve(concepts: list[Concept], per_theme: int = 8, max_def: int = 300) -> str:
+    """Deterministic per-theme retrieval block for the PROMPT (capped definitions)."""
     blocks: list[str] = []
     for theme in CANONICAL_THEMES:
-        kws = THEME_KEYWORDS.get(theme, [])
-        scored: list[tuple[int, str, Concept]] = []
-        for c in concepts:
-            score = sum(c.text.count(kw) for kw in kws)
-            if score > 0:
-                scored.append((score, c.name, c))
-        # Highest score first; deterministic tie-break on name.
-        scored.sort(key=lambda t: (-t[0], t[1]))
-        top = scored[:per_theme]
+        top = _top_for_theme(concepts, theme, per_theme)
         if not top:
             continue
-        lines = "\n".join("  • " + _render(c, max_def=max_def) for _, _, c in top)
+        lines = "\n".join("  • " + _render(c, max_def=max_def) for c in top)
         blocks.append(f"## Thema: {theme}\n{lines}")
     return "\n\n".join(blocks)
 
 
-def keyword_pattern() -> re.Pattern:
-    """(unused placeholder kept for future tooling)"""
-    return re.compile("")
+def retrieve_one(concepts: list[Concept], theme: str, per_theme: int = 8, max_def: int = 300) -> str:
+    """Prompt block of the retrieved ontology concepts for a SINGLE theme (for per-theme calls)."""
+    top = _top_for_theme(concepts, theme, per_theme)
+    if not top:
+        return "(geen specifieke ontology-concepten gevonden voor dit thema)"
+    return "\n".join("• " + _render(c, max_def=max_def) for c in top)
+
+
+def retrieve_structured(concepts: list[Concept], per_theme: int = 6) -> dict[str, list[Concept]]:
+    """Per-theme retrieved concepts as structured objects, for VISIBLE display in the UI.
+
+    These are attached verbatim (name/definition/clarification straight from the snapshot) so
+    experts see exactly which ontology rows back the standard side of each theme."""
+    return {theme: _top_for_theme(concepts, theme, per_theme) for theme in CANONICAL_THEMES}

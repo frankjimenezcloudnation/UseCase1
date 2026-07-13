@@ -5,12 +5,18 @@ import {
   LuChevronDown,
   LuChevronUp,
   LuCircleCheck,
+  LuDatabase,
   LuPackage,
   LuShieldCheck,
   LuShieldAlert,
   LuTriangleAlert,
 } from "react-icons/lu";
-import type { EntitlementComparison, EvidenceLevel, ProvisionSource } from "@/api/analysis";
+import type {
+  EntitlementComparison,
+  EvidenceLevel,
+  OntologyConcept,
+  ProvisionSource,
+} from "@/api/analysis";
 import { SEVERITY } from "@/lib/severity";
 
 const EVIDENCE: Record<EvidenceLevel, { bg: string; fg: string; label: string }> = {
@@ -55,6 +61,65 @@ function BulletList({ items, color }: { items: string[]; color: string }) {
         </Flex>
       ))}
     </Stack>
+  );
+}
+
+function OntologyBlock({ concepts }: { concepts: OntologyConcept[] }) {
+  const [open, setOpen] = useState(false);
+  if (!concepts?.length) return null;
+  return (
+    <Box mt={4} borderWidth="1px" borderColor="#B7E0F0" bg="#F2FAFE" borderRadius="lg" px={4} py={3}>
+      <Flex
+        as="button"
+        align="center"
+        gap={2}
+        w="100%"
+        textAlign="left"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Icon as={LuDatabase} color="#0B6E9C" boxSize="16px" flexShrink={0} />
+        <Text fontSize="xs" fontWeight="700" textTransform="uppercase" color="#0B6E9C">
+          Onderbouwing uit de Ontology ({concepts.length} concepten)
+        </Text>
+        <Icon as={open ? LuChevronUp : LuChevronDown} color="#0B6E9C" boxSize="16px" ml="auto" />
+      </Flex>
+      {open && (
+        <Stack gap={3} mt={3}>
+          <Text fontSize="xs" color="fg.muted">
+            Letterlijk uit de OntologySnapshot (single source of truth). De ExternalId verwijst naar
+            de volledige rij in het bestand.
+          </Text>
+          {concepts.map((c, i) => (
+            <Box key={i} borderLeftWidth="3px" borderColor="#0B6E9C" pl={3}>
+              <Text fontSize="sm" fontWeight="700">
+                {c.name}
+                {c.external_id && (
+                  <Text as="span" color="fg.muted" fontWeight="400" fontSize="xs">
+                    {" "}· {c.external_id}
+                  </Text>
+                )}
+              </Text>
+              {c.definition && (
+                <Text fontSize="sm">
+                  <Text as="span" fontWeight="600" color="fg.muted">
+                    Definitie:{" "}
+                  </Text>
+                  {c.definition}
+                </Text>
+              )}
+              {c.clarification && (
+                <Text fontSize="sm" color="fg.muted">
+                  <Text as="span" fontWeight="600">
+                    Toelichting:{" "}
+                  </Text>
+                  {c.clarification}
+                </Text>
+              )}
+            </Box>
+          ))}
+        </Stack>
+      )}
+    </Box>
   );
 }
 
@@ -213,6 +278,9 @@ export function EntitlementCard({ item, index }: { item: EntitlementComparison; 
             <BulletList items={item.standard_points} color="#0E83BF" />
           </Box>
         </SimpleGrid>
+
+        {/* Verbatim ontology grounding for the standard side — single source of truth */}
+        <OntologyBlock concepts={item.ontology_concepts} />
 
         {/* The difference — the thing experts actually want to see */}
         {item.key_differences?.length > 0 && (
