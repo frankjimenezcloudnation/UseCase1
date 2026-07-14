@@ -21,6 +21,8 @@ from app.core.config import settings
 from app.services import ontology
 from app.services.documents import Document
 from app.services.extraction import extract_text
+from app.services.rag import embeddings as rag_embeddings
+from app.services.rag import index as rag
 from app.services.verification import verify_report
 from app.schemas.comparison import (
     AnalysisResponse,
@@ -38,7 +40,7 @@ MAX_PARALLEL = 12
 
 # Bump this whenever the prompt or analysis logic changes, so the on-disk result cache is
 # invalidated and old runs are not served with new logic.
-PROMPT_VERSION = "4"
+PROMPT_VERSION = "6"
 
 SYSTEM_PROMPT = """\
 You are an expert actuarial auditor for the Dutch Wet toekomst pensioenen (Wtp) transition. \
@@ -105,14 +107,19 @@ Grounding checks and the ontology proof are added by the system afterwards — y
 produce the comparison fields and their verbatim sources. Output must exactly match the schema."""
 
 
-def _theme_instruction(theme: str, ontology_block: str) -> str:
+def _theme_instruction(theme: str, ontology_block: str, ontology_filename: str) -> str:
     """The per-theme user instruction (the fund/benchmark corpus is sent as a cached block)."""
+    onto_ref = ontology_filename or "OntologySnapshot.xlsx"
     return (
-        f"=== STANDARD PRODUCT ONTOLOGY — relevant concepts for this theme ===\n{ontology_block}\n\n"
+        f"=== STANDARD PRODUCT ONTOLOGY — relevant concepts for this theme ===\n"
+        f"(These concepts come from the file '{onto_ref}'. If you quote any of them in "
+        f"standard_sources, set document_name EXACTLY to '{onto_ref}' — never attribute an ontology "
+        f"definition to another document.)\n{ontology_block}\n\n"
         f"=== YOUR TASK ===\nProduce exactly ONE EntitlementComparison for the theme: '{theme}'. "
         f"Set `area` to '{theme}'. Describe the fund side ONLY from the FUND CORPUS and the standard "
         "side ONLY from the BENCHMARK references + the ontology concepts above, each with verbatim "
-        "quotes. Follow the gap/consistency rules exactly."
+        "quotes. When a standard-side fact comes from the ontology concepts above, cite it with "
+        f"document_name '{onto_ref}'. Follow the gap/consistency rules exactly."
     )
 
 
@@ -133,29 +140,24 @@ def _is_ontology(d: Document) -> bool:
 
 def _prepare_corpus(
     fund_docs: list[Document], benchmark_docs: list[Document]
-) -> tuple[list[tuple[Document, str]], list[tuple[Document, str]], list[tuple[Document, str]], list]:
-    """Return (fund_texts, benchmark_index, benchmark_prompt, ontology_concepts).
+) -> tuple[list[tuple[Document, str]], list[tuple[Document, str]], list]:
+    """Return (fund_texts, benchmark_index, ontology_concepts).
 
-    For the ontology the VERIFICATION index gets the full rendering (so any quoted concept can
-    be checked), while the PROMPT only gets the deterministically retrieved concepts per theme
-    (bounded, so context stays focused). The loaded concepts are also returned so the backend can
-    attach verbatim rows to each finding for visible proof.
+    `benchmark_index` holds the FULL text of each benchmark doc (the ontology fully rendered),
+    used as the verification corpus so any quoted passage can be checked. The RAG layer chunks
+    and embeds these same texts for retrieval into the prompt.
     """
     fund_docs_text = _extract_all(fund_docs)
     benchmark_index: list[tuple[Document, str]] = []
-    benchmark_prompt: list[tuple[Document, str]] = []
     ontology_concepts: list = []
     for d in benchmark_docs:
         if _is_ontology(d):
             concepts = ontology.load_concepts(d.path)
             ontology_concepts = concepts
             benchmark_index.append((d, ontology.full_text(concepts, 10_000_000)))
-            benchmark_prompt.append((d, ontology.retrieve(concepts)))
         else:
-            txt = extract_text(d.path, settings.MAX_DOC_CHARS)
-            benchmark_index.append((d, txt))
-            benchmark_prompt.append((d, txt))
-    return fund_docs_text, benchmark_index, benchmark_prompt, ontology_concepts
+            benchmark_index.append((d, extract_text(d.path, settings.MAX_DOC_CHARS)))
+    return fund_docs_text, benchmark_index, ontology_concepts
 
 
 def _match_theme(area: str) -> str | None:
@@ -176,42 +178,53 @@ def _cap(text: str, limit: int) -> str:
     return text[:limit].rstrip() + "…" if len(text) > limit else text
 
 
-def _attach_ontology(report: FundComparisonReport, concepts: list) -> FundComparisonReport:
-    """Attach verbatim ontology rows (Name/Definition/Clarification) per finding — visible proof
-    pulled straight from the snapshot. Definitions/clarifications are capped to a readable preview
-    (the ExternalId lets an expert look up the full row); a handful of concepts per theme keeps it
-    scannable rather than a wall of text."""
-    if not concepts:
-        return report
-    by_theme = ontology.retrieve_structured(concepts, per_theme=4)
+def _cap(text: str, limit: int) -> str:
+    text = " ".join(text.split())  # collapse whitespace/newlines for compact display
+    return text[:limit].rstrip() + "…" if len(text) > limit else text
+
+
+def _attach_ontology_from_chunks(
+    report: FundComparisonReport, theme_onto: dict[str, list[dict]]
+) -> FundComparisonReport:
+    """Attach the verbatim ontology rows that were RETRIEVED for each theme (so the visible proof
+    matches what actually grounded the standard side). Capped to a readable preview."""
     for item in report.entitlements:
         theme = _match_theme(item.area)
-        rows = by_theme.get(theme, []) if theme else []
+        rows = theme_onto.get(theme, []) if theme else []
         item.ontology_concepts = [
             OntologyConcept(
-                external_id=c.external_id, name=c.name.replace("_", " "),
-                definition=_cap(c.definition, 320), clarification=_cap(c.clarification, 480),
+                external_id=c.get("external_id", ""), name=(c.get("name") or "").strip(),
+                definition=_cap(c.get("definition", ""), 320),
+                clarification=_cap(c.get("clarification", ""), 480),
             )
             for c in rows
         ]
     return report
 
 
-def _shared_context(
-    fund_docs_text: list[tuple[Document, str]],
-    benchmark_prompt: list[tuple[Document, str]],
-) -> str:
-    """The corpus shared by every per-theme call (sent as a cached block). The ontology is NOT
-    included here — the relevant ontology concepts are injected per theme in the instruction."""
-    parts: list[str] = ["# FUND CORPUS (the specific fund — 'waar hebben mensen recht op')\n"]
-    for d, text in fund_docs_text:
-        parts.append(f"\n## [{d.doc_type}] file: {d.filename}\n{text}\n")
-    parts.append("\n\n# BENCHMARK / STANDARD PRODUCT REFERENCES (the standard to compare against)\n")
-    for d, text in benchmark_prompt:
-        if _is_ontology(d):
-            continue  # ontology concepts are injected per-theme
-        parts.append(f"\n## [{d.doc_type}] file: {d.filename}\n{text}\n")
+def _ctx_from_chunks(fund_chunks: list[dict], bench_chunks: list[dict]) -> str:
+    """Render retrieved passages into a compact, citeable context block."""
+    parts: list[str] = ["# FUND CORPUS — relevant retrieved passages\n"]
+    for c in fund_chunks:
+        parts.append(f"\n## [{c['doc_type']}] file: {c['filename']} (pagina {c['page']})\n{c['text']}\n")
+    parts.append("\n\n# BENCHMARK / STANDARD PRODUCT REFERENCES — relevant retrieved passages\n")
+    for c in bench_chunks:
+        parts.append(f"\n## [{c['doc_type']}] file: {c['filename']} (pagina {c['page']})\n{c['text']}\n")
     return "".join(parts)
+
+
+def _onto_block_from_chunks(onto_chunks: list[dict]) -> str:
+    if not onto_chunks:
+        return "(geen specifieke ontology-concepten gevonden voor dit thema)"
+    lines = []
+    for c in onto_chunks:
+        line = "• " + (c.get("name") or "")
+        if c.get("definition"):
+            line += f": {_cap(c['definition'], 300)}"
+        if c.get("clarification"):
+            line += f" — toelichting: {_cap(c['clarification'], 300)}"
+        lines.append(line)
+    return "\n".join(lines)
 
 
 # --- Result cache: same document set -> identical result (deterministic repeat runs) ------
@@ -227,6 +240,7 @@ def _cache_key(
     h = hashlib.sha256()
     h.update(PROMPT_VERSION.encode())
     h.update((settings.CLAUDE_MODEL or "").encode())
+    h.update(rag_embeddings.model_id().encode())
     for d, text in sorted(fund_docs_text + benchmark_index, key=lambda t: t[0].filename):
         h.update(d.filename.encode("utf-8"))
         h.update(b"\0")
@@ -271,18 +285,19 @@ def _finalise(
     return report
 
 
+def _theme_query(theme: str) -> str:
+    """The retrieval query for a theme: its name plus its keywords for better recall."""
+    return f"{theme}. " + " ".join(ontology.THEME_KEYWORDS.get(theme, []))
+
+
 def analyse(fund_docs: list[Document], benchmark_docs: list[Document]) -> AnalysisResponse:
     fund_names = [d.filename for d in fund_docs]
     bench_names = [d.filename for d in benchmark_docs]
 
-    fund_docs_text, benchmark_index, benchmark_prompt, ont_concepts = _prepare_corpus(
-        fund_docs, benchmark_docs
-    )
+    fund_docs_text, benchmark_index, ont_concepts = _prepare_corpus(fund_docs, benchmark_docs)
 
     if not settings.has_ai_credentials:
-        report = _attach_ontology(
-            _finalise(_demo_report(fund_docs), fund_docs_text, benchmark_index), ont_concepts
-        )
+        report = _finalise(_demo_report(fund_docs), fund_docs_text, benchmark_index)
         return AnalysisResponse(
             mode="demo", model=None,
             fund_documents=fund_names, benchmark_documents=bench_names, report=report,
@@ -297,6 +312,35 @@ def analyse(fund_docs: list[Document], benchmark_docs: list[Document]) -> Analys
             fund_documents=fund_names, benchmark_documents=bench_names, report=cached,
         )
 
+    ont_filename = next((d.filename for d in benchmark_docs if _is_ontology(d)), "")
+
+    # Build (or load from disk) the vector index over the whole corpus, then retrieve the most
+    # relevant passages per theme UP FRONT (single-threaded — the embedded Qdrant store is not
+    # meant for concurrent access). Retrieval is fast; the LLM calls are the slow part and run
+    # in parallel below.
+    docs_with_text = list(fund_docs_text) + [(d, t) for d, t in benchmark_index if not _is_ontology(d)]
+    collection = rag.ensure_corpus(docs_with_text, ont_concepts, ont_filename)
+
+    # Embed every theme query (and the metadata query) in ONE batched, cached call, then reuse
+    # each vector for that theme's three retrievals — avoids ~34 sequential embedding round-trips.
+    meta_query = ("naam van het pensioenfonds en de beoogde overgangsdatum / "
+                  "transitiedatum van de regeling")
+    query_texts = [_theme_query(t) for t in ontology.CANONICAL_THEMES] + [meta_query]
+    query_vecs = rag_embeddings.embed_queries(query_texts)
+
+    theme_ctx: dict[str, str] = {}
+    theme_onto: dict[str, list[dict]] = {}
+    for i, theme in enumerate(ontology.CANONICAL_THEMES):
+        q, v = query_texts[i], query_vecs[i]
+        fund_chunks = rag.retrieve(collection, q, k=6, role="fund", kind="document", query_vector=v)
+        bench_chunks = rag.retrieve(collection, q, k=4, role="benchmark", kind="document", query_vector=v)
+        onto_chunks = rag.retrieve(collection, q, k=4, kind="ontology", query_vector=v)
+        theme_onto[theme] = onto_chunks
+        theme_ctx[theme] = _ctx_from_chunks(fund_chunks, bench_chunks)
+    meta_ctx = _ctx_from_chunks(
+        rag.retrieve(collection, meta_query, k=8, role="fund", query_vector=query_vecs[-1]), []
+    )
+
     import anthropic
 
     # Extra retries so the concurrent burst rides out transient 429/rate-limit responses.
@@ -305,7 +349,6 @@ def analyse(fund_docs: list[Document], benchmark_docs: list[Document]) -> Analys
         if settings.ANTHROPIC_API_KEY
         else anthropic.Anthropic(max_retries=4)
     )
-    shared = _shared_context(fund_docs_text, benchmark_prompt)
 
     def _stream_parse(system: str, user: str, schema, max_tokens: int):
         # Streaming avoids the SDK's non-streaming 10-minute guard.
@@ -317,21 +360,23 @@ def analyse(fund_docs: list[Document], benchmark_docs: list[Document]) -> Analys
 
     def _call_theme(theme: str):
         try:
-            instruction = _theme_instruction(theme, ontology.retrieve_one(ont_concepts, theme))
-            return _stream_parse(SYSTEM_PROMPT, shared + "\n\n" + instruction,
+            instruction = _theme_instruction(
+                theme, _onto_block_from_chunks(theme_onto[theme]), ont_filename
+            )
+            return _stream_parse(SYSTEM_PROMPT, theme_ctx[theme] + "\n\n" + instruction,
                                  EntitlementComparisonLLM, max_tokens=6000)
         except Exception:
             return None
 
     def _call_meta():
         try:
-            return _stream_parse(META_SYSTEM, shared, ReportMetaLLM, max_tokens=500)
+            return _stream_parse(META_SYSTEM, meta_ctx, ReportMetaLLM, max_tokens=500)
         except Exception:
             return None
 
     # Fan out: one small metadata call + one call per theme, all concurrent. Wall-clock is the
     # slowest wave instead of the sum — much faster than one giant call, and each theme is
-    # analysed in isolation so information cannot bleed between subjects.
+    # analysed in isolation (its own retrieved passages) so information cannot bleed between subjects.
     themes = ontology.CANONICAL_THEMES
     with ThreadPoolExecutor(max_workers=MAX_PARALLEL) as ex:
         meta_future = ex.submit(_call_meta)
@@ -341,9 +386,7 @@ def analyse(fund_docs: list[Document], benchmark_docs: list[Document]) -> Analys
 
     if all(r is None for r in theme_results):
         # Total failure — degrade to the clearly labelled demo report rather than 500.
-        report = _attach_ontology(
-            _finalise(_demo_report(fund_docs), fund_docs_text, benchmark_index), ont_concepts
-        )
+        report = _finalise(_demo_report(fund_docs), fund_docs_text, benchmark_index)
         return AnalysisResponse(
             mode="demo", model=settings.CLAUDE_MODEL,
             fund_documents=fund_names, benchmark_documents=bench_names, report=report,
@@ -369,8 +412,10 @@ def analyse(fund_docs: list[Document], benchmark_docs: list[Document]) -> Analys
         entitlements=entitlements,
     )
 
-    # Anti-hallucination guard + card/summary consistency + visible ontology proof, then cache.
-    report = _attach_ontology(_finalise(report, fund_docs_text, benchmark_index), ont_concepts)
+    # Anti-hallucination guard + card/summary consistency, then attach the retrieved ontology
+    # rows as visible proof, then cache for reproducible repeats.
+    report = _finalise(report, fund_docs_text, benchmark_index)
+    report = _attach_ontology_from_chunks(report, theme_onto)
     _store_cache(key, report)
 
     return AnalysisResponse(
