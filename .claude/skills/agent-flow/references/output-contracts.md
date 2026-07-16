@@ -13,13 +13,15 @@ De orchestrator valideert elk agent-deliverable tegen dit contract voordat het a
 
 **Verplichte structuur:**
 - Kop bevat `Status: concept` of `Status: klaar_voor_review`.
-- H2's in volgorde: `## Doel`, `## Actoren`, `## Scope`, `## Expliciete aannames`, `## Bekende cijfers`, `## Onduidelijkheden en ambiguïteiten`, `## Signaleringen`, `## Open vragen en aannames`.
+- H2's in volgorde: `## Doel`, `## Actoren`, `## Scope`, `## Huidige situatie (IST)`, `## Gewenste situatie (SOLL)`, `## Behoeften en gap`, `## Expliciete aannames`, `## Bekende cijfers`, `## Onduidelijkheden en ambiguïteiten`, `## Signaleringen`, `## Open vragen en aannames`.
 - `Scope`-sectie bevat een tabel waarin alle 5 thema's voorkomen (opbouwsystematiek, partnerpensioen, indexatie, compensatie, beleggingsrisico).
+- `Huidige situatie (IST)` en `Gewenste situatie (SOLL)` bevatten elk zowel een `Zakelijk:`- als een `Technisch:`-invalshoek.
 
 **Automatische checks:**
-- Elke H2-kop: `grep -q "^## Doel" <bestand>` (herhaal per kop).
+- Elke H2-kop: `grep -q "^## Doel" <bestand>` (herhaal per kop, incl. `## Huidige situatie (IST)`, `## Gewenste situatie (SOLL)`, `## Behoeften en gap`).
 - Statusregel: `grep -Eq "Status: (concept|klaar_voor_review)" <bestand>`.
 - Thema-dekking: `grep -qi "opbouwsystematiek" <bestand>` (herhaal voor alle 5 thema's).
+- IST/SOLL-invalshoeken: `grep -Eq "Zakelijk:" <bestand> && grep -Eq "Technisch:" <bestand>`.
 
 ---
 

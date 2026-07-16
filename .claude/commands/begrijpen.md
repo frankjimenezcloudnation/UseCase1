@@ -17,17 +17,18 @@ Doel: de gebruiker levert alle informatie die zij willen geven, typt `/begrijpen
 
 ## Stap 1 — Activeer de agent-flow (Station 1)
 
-Activeer daarna de **`agent-flow`**-skill (Skill-tool) en volg die exact, met deze focus:
+Activeer daarna de **`agent-flow`**-skill (Skill-tool) en volg die **Interview-modus (Station 1)** exact. Het doel is dat zowel de agents als de gebruiker de behoefte scherp krijgen: de **huidige situatie (IST)** en de **gewenste situatie (SOLL)**, telkens in **zakelijke én technische** termen.
 
 1. **Bootstrap + dashboard** zoals de skill voorschrijft.
-2. **Route naar Station 1:**
-   - Canvas ontbreekt → dispatch **context-analyst**: bouw het Use Case Canvas uit `context/projectcontext.md` + het fonds-/benchmarkcorpus + de ontologie. Lees grondig (alle relevante documenten, paginaranges), toets kernbegrippen tegen `OntologySnapshot.xlsx`, en maak de sectie *Onduidelijkheden en ambiguïteiten* zo volledig mogelijk — dat is de kern van "optimaal begrijpen".
-   - Canvas `concept` → dispatch **domain-interviewer** (vragen-modus): zet de onduidelijkheden om in geprioriteerde, beantwoordbare expertvragen.
-   - Antwoorden beschikbaar → dispatch **domain-interviewer** (verwerk-modus).
-   - Canvas `klaar_voor_review` → bied **Gate 1** aan (sign-off door de deskundigen).
-3. **Valideer** elk deliverable tegen `references/output-contracts.md` vóór je het toont.
-4. **Blijf binnen Station 1.** Ga niet door naar specificeren (Station 2) zolang Gate 1 niet is afgetekend. Voor de volledige orkestratie is er `/agent-flow`.
-5. **De mens beslist.** Elke agent-output eindigt met open vragen en aannames; jij vat samen en legt de keuzes bij de gebruiker/deskundigen.
+2. **Startbegrip:** dispatch **context-analyst** → eerste Use Case Canvas uit `context/projectcontext.md` + corpus + ontologie, mét de secties `Huidige situatie (IST)`, `Gewenste situatie (SOLL)` (elk zakelijk + technisch) en `Behoeften en gap`. Lees grondig; maak `Onduidelijkheden en ambiguïteiten` zo volledig mogelijk.
+3. **Interview de gebruiker interactief** (dit is de kern):
+   - Dispatch **domain-interviewer** (vragen-modus) voor een geprioriteerde vragenlijst, geordend langs IST vs. SOLL en zakelijk vs. technisch.
+   - Stel de gebruiker **een kleine batch tegelijk** (±3–5 vragen) in gewone taal; maak per vraag duidelijk of het over de huidige of gewenste situatie gaat en of het zakelijk of technisch is. Overval niet met de hele lijst.
+   - **Koppel terug** wat je begrepen hebt ("dus als ik je goed begrijp…") en laat corrigeren — zo groeit ook het begrip van de gebruiker. Persisteer bevestigde antwoorden in `context/projectcontext.md`.
+   - Dispatch **domain-interviewer** (verwerk-modus) om de antwoorden met attributie in het canvas te verwerken; herhaal tot IST/SOLL helder zijn en alleen nog echte expertvragen open staan.
+4. **Valideer** elk deliverable tegen `references/output-contracts.md` vóór je het toont.
+5. **Gate 1:** zet het canvas op `klaar_voor_review` en bied sign-off door de deskundigen aan. **Blijf binnen Station 1** — ga niet door naar specificeren (Station 2) zolang Gate 1 niet is afgetekend. Voor de volledige orkestratie is er `/agent-flow`.
+6. **De mens beslist.** Elke agent-output eindigt met open vragen en aannames; jij vat samen en legt de keuzes bij de gebruiker/deskundigen.
 
 ## Wat de gebruiker meegaf voor deze aanroep
 

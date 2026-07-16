@@ -13,6 +13,9 @@ Jij bent de context-analist voor Use Case 1: een tool die pensioenfondsdocumente
 - Doel van de vergelijkingstool
 - Betrokken actoren en hun belangen
 - Scope van de vergelijking (5 vaste thema's)
+- **Huidige situatie (IST)** — zakelijk én technisch
+- **Gewenste situatie (SOLL)** — zakelijk én technisch
+- **Behoeften en gap** — wat er nodig is om van IST naar SOLL te komen
 - Expliciete aannames
 - Bekende cijfers met bronvermelding
 - Onduidelijkheden en ambiguïteiten — **de kern van je deliverable**
@@ -54,6 +57,17 @@ Datum: <YYYY-MM-DD>
 
 ## Scope
 <Tabel met exact 5 rijen (thema's: opbouwsystematiek, partnerpensioen, indexatie, compensatie, beleggingsrisico). Kolommen: thema | in/uit scope | motivatie | bron.>
+
+## Huidige situatie (IST)
+**Zakelijk:** <hoe werkt het nu voor het fonds/de deelnemer — proces, huidige regeling, pijnpunten; met bron>
+**Technisch:** <hoe is het nu technisch belegd — documenten, systemen, handmatig werk, doorlooptijd; met bron>
+
+## Gewenste situatie (SOLL)
+**Zakelijk:** <wat moet het worden — welke behoefte/uitkomst voor fonds/deelnemer/toezicht; met bron>
+**Technisch:** <wat moet het technisch worden — de tool, automatisering, output, provenance; met bron>
+
+## Behoeften en gap
+<Bulletlijst: wat is er nodig om van IST naar SOLL te komen? Benoem de gap per punt en waar mogelijk het betrokken thema. Onbekende/aan te scherpen punten verhuizen naar Onduidelijkheden.>
 
 ## Expliciete aannames
 <Bulletlijst met aannames uit context/corpus. Bronvermelding verplicht.>

@@ -11,6 +11,8 @@ Deze skill stuurt de agent-flow aan tijdens het verfijnen van de WTP-tool. De sk
 
 ## Kernprincipes
 
+- **Doel van Station 1: gedeeld begrip.** Zowel de agents als de user moeten de behoefte scherp krijgen: de **huidige situatie (IST)** en de **gewenste situatie (SOLL)**, telkens in **technische én zakelijke** termen. Het canvas legt dat vast; de interviewdialoog zorgt dat óók de user het scherp krijgt.
+- **Interviewend, niet eenmalig.** Station 1 verloopt als een interactieve dialoog: de orchestrator interviewt de user in korte, gerichte rondes en koppelt het begrip steeds terug ("dus als ik je goed begrijp…"). Subagents draaien autonoom en praten niet zelf met de user — de live interview loopt dus via de orchestrator (zie *Interview-modus*).
 - **De mens beslist, de agent bereidt voor.** Gates worden alleen door mensen gepasseerd; deze skill registreert de beslissing, neemt hem nooit zelf.
 - **Bron van waarheid:** `docs/agent-flow/status.yaml` — **alleen deze skill schrijft dat bestand**, subagents nooit.
 - **Lees vóór je routeert of valideert:** `references/flow-state.md` (state-schema + routingtabel) en `references/output-contracts.md` (verplichte structuur + checks per deliverable).
@@ -28,6 +30,17 @@ Deze skill stuurt de agent-flow aan tijdens het verfijnen van de WTP-tool. De sk
    ```
    Bij falen: her-dispatch dezelfde agent met de concrete validatiefouten (max 2 retries), daarna aan de user voorleggen. Presenteer niet-conforme output nooit als klaar.
 6. **Statusupdate.** Werk `status.yaml` bij (artefact-status, `laatst_bijgewerkt`) na elke geslaagde run.
+
+## Interview-modus (Station 1 — Begrijpen)
+
+De orchestrator voert de interview-dialoog; de subagents leveren de bouwstenen. Loop:
+
+1. **Startbegrip.** Dispatch de **context-analyst** → eerste canvas-concept met o.a. `Huidige situatie (IST)`, `Gewenste situatie (SOLL)` (elk zakelijk + technisch) en `Behoeften en gap`. Wat nog onbekend is, staat in `Onduidelijkheden en ambiguïteiten`.
+2. **Vragen voorbereiden.** Dispatch de **domain-interviewer** (vragen-modus) → een geprioriteerde vragenlijst, geordend langs IST vs. SOLL en zakelijk vs. technisch.
+3. **Interviewen (orchestrator ↔ user).** Stel de user **een kleine batch tegelijk** (±3–5 vragen), in gewone taal, en maak expliciet of het over de huidige of de gewenste situatie gaat en of het zakelijk of technisch is. Overval de user niet met de hele lijst.
+4. **Terugkoppelen.** Vat na elke batch kort samen wat je begrepen hebt en laat de user corrigeren — zo groeit óók het begrip van de user. Persisteer bevestigde antwoorden in `context/projectcontext.md`.
+5. **Verwerken.** Dispatch de **domain-interviewer** (verwerk-modus) om de antwoorden met attributie in het canvas te verwerken; herhaal vanaf stap 3 tot IST/SOLL helder zijn en alleen nog echte expertvragen open staan.
+6. **Gate 1.** Zet de canvas op `klaar_voor_review` en bied Gate 1 aan (sign-off door de deskundigen).
 
 ## Gates
 
