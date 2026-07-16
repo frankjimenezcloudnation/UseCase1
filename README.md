@@ -45,3 +45,35 @@ always demonstrable (the UI shows which mode ran).
    number and a verbatim quote, per the provenance requirement (DNB/AFM).
 4. **Qwik-ready** — each deviation includes proposed Qwik rule-engine configuration
    parameters as JSON.
+
+## Agent-flow (voor het verfijnen van de tool)
+
+Een Claude Code multi-agent workflow die de use case gecontroleerd vertaalt naar
+specificaties, een Definition of Done en acceptatietesten — met de pensioendeskundigen
+als beslissers op elke inhoudelijke stap. **4 stations, 7 agents, 3 human gates.**
+
+**Ingangen (slash-commands):**
+
+- **`/begrijpen`** — start Station 1 (Begrijpen): de brainstorm-/begripsfase. Bouwt het
+  Use Case Canvas en zet onduidelijkheden om in geprioriteerde expertvragen. Gebruik dit
+  om de agents scherp te krijgen wat we met UC1 bedoelen, vóór er iets gespecificeerd wordt.
+- **`/agent-flow`** — de volledige orkestratie over alle stations (begrijpen → specificeren
+  → DoD & testen → beheer), met gate-handhaving en outputvalidatie.
+
+**Structuur:**
+
+- `.claude/skills/agent-flow/` — de orchestrator-skill (`SKILL.md`) + `references/`
+  (`flow-state.md` = state-schema & routing, `output-contracts.md` = validatiecontracten).
+- `.claude/agents/` — de 7 agent-definities (context-analyst, domain-interviewer,
+  requirements-engineer, ontology-guardian, dod-composer, test-designer, red-team-critic).
+- `.claude/commands/begrijpen.md` — de `/begrijpen`-ingang.
+- `docs/agent-flow/` — deliverables (canvas, vragen, specs, DoD, tests, red-team),
+  `status.yaml` (gate-/flow-state, bron van waarheid) en `traceability.yaml`.
+- `scripts/doc_tools.py` — teksttoegang tot binaire bronnen (ontologie-zoeken, DOCX/XLSX),
+  draait op `backend/.venv/bin/python` (geen extra dependencies).
+- `context/` — lokale broncontext (projectcontext + spec), **gitignored**; niet gepusht.
+
+Principes: de mens beslist en de agent bereidt voor; elke bevinding is traceerbaar naar een
+bron; `OntologySnapshot.xlsx` is de gedeelde taal; en recente stakeholderinput wint van het
+contextdocument. `.md`/`.yaml` uit deze flow worden nooit door de analyse-pipeline ingelezen
+(die scant alleen `.pdf/.docx/.xlsx` in de repo-root en `uploads/`).

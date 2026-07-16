@@ -1,0 +1,51 @@
+# Flow-state van de WTP agent-flow (Use Case 1).
+# BRON VAN WAARHEID voor routing en gate-handhaving.
+# ALLEEN de orchestrator (/agent-flow) schrijft dit bestand — agents nooit.
+# Schema en routingtabel: .claude/skills/agent-flow/references/flow-state.md
+
+flow_versie: 1
+context_document: context/projectcontext.md
+spec_document: context/implementatieplan-agent-flow.md
+
+artefacten:
+  canvas: { status: ontbreekt, pad: docs/agent-flow/01-canvas/use-case-canvas.md, laatst_bijgewerkt: null }
+  vragen: { status: ontbreekt, laatst_bijgewerkt: null }
+  # DoD wordt per thema geproduceerd (dod-<thema>.md), dus per-thema getrackt — net als gate_2.themas.
+  dod:
+    themas:
+      opbouwsystematiek: { status: ontbreekt, pad: docs/agent-flow/04-dod/dod-opbouwsystematiek.md, laatst_bijgewerkt: null }
+      partnerpensioen: { status: ontbreekt, pad: docs/agent-flow/04-dod/dod-partnerpensioen.md, laatst_bijgewerkt: null }
+      indexatie: { status: ontbreekt, pad: docs/agent-flow/04-dod/dod-indexatie.md, laatst_bijgewerkt: null }
+      compensatie: { status: ontbreekt, pad: docs/agent-flow/04-dod/dod-compensatie.md, laatst_bijgewerkt: null }
+      beleggingsrisico: { status: ontbreekt, pad: docs/agent-flow/04-dod/dod-beleggingsrisico.md, laatst_bijgewerkt: null }
+      generiek: { status: ontbreekt, pad: docs/agent-flow/04-dod/dod-generiek.md, laatst_bijgewerkt: null }
+  validatietesten: { status: ontbreekt, laatst_bijgewerkt: null }
+  acceptatietesten: { status: ontbreekt, laatst_bijgewerkt: null }
+  golden_dataset: { status: ontbreekt, laatst_bijgewerkt: null }
+  red_team: { status: ontbreekt, laatst_bijgewerkt: null }
+
+gates:
+  gate_1:
+    status: open            # open | signed_off
+    signed_off_by: []
+    datum: null
+  gate_2:
+    themas:
+      opbouwsystematiek: { status: open, goedgekeurd_door: null, datum: null }   # open | specs_klaar | goedgekeurd
+      partnerpensioen: { status: open, goedgekeurd_door: null, datum: null }
+      indexatie: { status: open, goedgekeurd_door: null, datum: null }
+      compensatie: { status: open, goedgekeurd_door: null, datum: null }
+      beleggingsrisico: { status: open, goedgekeurd_door: null, datum: null }
+      generiek: { status: open, goedgekeurd_door: null, datum: null }
+  gate_3:
+    status: open            # open | signed_off
+    golden_dataset_gefixeerd: false
+    streefwaarden_gefixeerd: false
+    signed_off_by: []
+    datum: null
+
+# Gate-overrides op expliciet verzoek van de user: {gate, datum, reden, bevestigd_door_user: true}
+overrides: []
+
+# Artefactpaden die door een wijziging verouderd zijn (Station 4 zet en ruimt op)
+verouderd: []

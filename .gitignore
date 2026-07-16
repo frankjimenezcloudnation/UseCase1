@@ -1,3 +1,6 @@
 
 # User-uploaded documents + analysis cache (runtime, not source)
 /uploads/
+
+# Lokale broncontext (spec + projectcontext) — niet pushen
+/context/

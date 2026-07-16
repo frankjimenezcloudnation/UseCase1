@@ -1,0 +1,11 @@
+# Traceability-matrix (Station 4): requirement ↔ thema ↔ bron ↔ testgeval ↔ story.
+# Gevuld door requirements-engineer (REQ-entries) en test-designer (testgevallen-koppeling).
+# Entry-schema:
+#   - requirement: REQ-<CODE>-NNN     # CODE: OPB|PP|IDX|COMP|BEL|GEN
+#     thema: opbouwsystematiek | partnerpensioen | indexatie | compensatie | beleggingsrisico | generiek
+#     bron: "document, artikel/paragraaf, pagina" of "besloten door <naam>, sessie <datum>"
+#     testgevallen: []                # TST-VAL-NNN / TST-ACC-NNN
+#     story: null                     # backlog-referentie, later
+#     status: actueel                 # actueel | verouderd
+
+entries: []
