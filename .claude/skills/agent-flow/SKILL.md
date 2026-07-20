@@ -7,7 +7,10 @@ description: "Orchestreert de WTP agent-flow voor Use Case 1: 5 stations, 12 age
 
 Deze skill stuurt de agent-flow aan tijdens het verfijnen van de WTP-tool. De skill voert **zelf geen inhoudelijk werk** uit: hij bepaalt de flow-positie, dispatcht subagents, handhaaft gates en valideert output.
 
-**Ingangen:** `/agent-flow` (volledige orkestratie, alle stations), `/begrijpen` (start direct in Station 1 — Begrijpen: de brainstorm-/begripsfase) of `/vertalen` (start direct in Station 2 — Vertalen: interpretatieteam + vertaalchat + deliverables-tabel). Alle drie activeren deze skill.
+**Ingangen (alle drie activeren deze ene skill):**
+- **`/begrijpen`** — de hoofdingang: één doorlopende sessie waarin je met het agent-team spart (zij stellen vragen, jij antwoordt en legt uit) tot jij zegt dat je **klaar** bent; daarna doorlopen de agents de hele flow grondig. Zie *Doorlopende modus*.
+- **`/vertalen`** — spring direct naar Station 2 (Vertalen), als het canvas al door Gate 1 is.
+- **`/agent-flow`** — station-voor-station orkestratie met een gate-pauze na elk station, voor wie stap voor stap meer controle wil.
 
 ## Stations, agents en gates op een rij
 
@@ -23,6 +26,7 @@ Deze skill stuurt de agent-flow aan tijdens het verfijnen van de WTP-tool. De sk
 
 ## Kernprincipes
 
+- **Eén doorlopende sessie (`/begrijpen`).** De user spart met het team tot die **"klaar"** zegt; daarna voeren de agents de hele flow grondig uit (Begrijpen → Vertalen → Specificeren → DoD & Testen). De "klaar" van de user is het go-signaal — de orchestrator dwingt nooit door, en verzint nooit een beslissing die de user of de deskundigen toekomt. Zie *Doorlopende modus*.
 - **Doel van Station 1: gedeeld begrip.** Zowel de agents als de user moeten de behoefte scherp krijgen: de **huidige situatie (IST)** en de **gewenste situatie (SOLL)**, telkens in **technische én zakelijke** termen. Het canvas legt dat vast; de interviewdialoog zorgt dat óók de user het scherp krijgt.
 - **Doel van Station 2: business ↔ techniek vertalen.** Een team van 4 lens-agents interpreteert het canvas onafhankelijk (business, techniek, data/ontologie, compliance/risico); de vertaal-synthesizer voegt dat samen tot één deliverables-tabel en maakt conflicten tussen lenzen expliciet zichtbaar als divergenties — nooit stilzwijgend opgelost.
 - **Interviewend/vertalend, niet eenmalig.** Station 1 én Station 2 verlopen als een interactieve dialoog: de orchestrator bevraagt de user in korte, gerichte rondes en koppelt steeds terug ("dus als ik je goed begrijp…"). Subagents draaien autonoom en praten niet zelf met de user — elke live dialoog loopt dus via de orchestrator (zie *Interview-modus* en *Vertaal-modus*).
@@ -43,6 +47,28 @@ Deze skill stuurt de agent-flow aan tijdens het verfijnen van de WTP-tool. De sk
    ```
    Bij falen: her-dispatch dezelfde agent met de concrete validatiefouten (max 2 retries), daarna aan de user voorleggen. Presenteer niet-conforme output nooit als klaar.
 6. **Statusupdate.** Werk `status.yaml` bij (artefact-status, `laatst_bijgewerkt`) na elke geslaagde run.
+
+## Doorlopende modus (`/begrijpen`): sparren tot "klaar", dan de volledige flow
+
+Dit is de hoofdmanier om de flow te draaien: één doorlopende sessie. De orchestrator voert het gesprek; de subagents leveren de vragen en bouwstenen (zij praten nooit zelf met de user).
+
+**Fase A — Sparren (interactief, tot de user "klaar" zegt).**
+1. Leg de aangeleverde input vast in `context/projectcontext.md` (aanmaken of gedateerde sectie toevoegen).
+2. Dispatch **context-analyst** → eerste canvas (Doel, Actoren, Scope, IST/SOLL zakelijk+technisch, Behoeften en gap, Onduidelijkheden).
+3. Dispatch **domain-interviewer** (vragen-modus) → geprioriteerde vragen (Dimensie IST/SOLL × zakelijk/technisch). Zodra het canvas staat, mag je ook de 4 lens-agents draaien en hun divergenties als extra sparring-materiaal gebruiken.
+4. **Spar met de user:** stel **een kleine batch tegelijk** (±3–5 vragen), in gewone taal; koppel na elke batch terug ("dus als ik je goed begrijp…"), laat corrigeren, en **persisteer elk bevestigd antwoord** in `context/projectcontext.md` met attributie. Verwerk tussentijds via domain-interviewer (verwerk-modus).
+5. **Blijf sparren tot de user expliciet zegt klaar te zijn** ("klaar", "genoeg", "ga maar"). Overval de user niet en dwing nooit door; als de vragen op lijken, vraag: "Heb je nog aanvullingen, of gaan de agents aan de slag?"
+
+**Fase B — Uitvoeren (grondig, na "klaar").**
+Zodra de user klaar is, doorloop je de hele flow in één run met de sparring-input als basis. Val bij een echt mensbesluit terug op wat in Fase A is vastgelegd; kun je iets daar niet uit oplossen, leg het dan kort voor of markeer het expliciet als open — nooit stil zelf beslissen.
+1. **Station 1 afronden** → canvas `klaar_voor_review`; Gate 1 (de "klaar" van de user telt als go-signaal; registreer met naam + datum als die gegeven zijn, anders noteer "akkoord user, <datum>").
+2. **Station 2 Vertalen** → volg *Vertaal-modus*: 4 lenzen parallel → vertaal-synthesizer → deliverables-tabel + -samenvatting. Los divergenties op uit de vastgelegde sparring-context; een divergentie die daar niet uit volgt, leg je kort voor of laat je als open DIV staan. → Gate Vertalen.
+3. **Station 3 Specificeren** → requirements-engineer per thema (parallel) + ontology-guardian → Gate 2 per thema.
+4. **Station 4 DoD & Testen** → dod-composer + test-designer + red-team-critic → Gate 3. De golden-dataset-grondwaarheden kunnen alleen deskundigen vaststellen: lever het skelet + voorstellen en markeer die expliciet als "nog te bevestigen door deskundigen" — presenteer ze nooit als vastgesteld.
+5. **Valideer** elk deliverable tegen `references/output-contracts.md` (max 2 retries) en werk `status.yaml` bij.
+6. **Sluit af** met een compact overzicht: alle geproduceerde deliverables (paden) + een expliciete lijst van wat nog door deskundigen bevestigd moet worden.
+
+De *Interview-modus* en *Vertaal-modus* hieronder zijn de sub-procedures die deze doorlopende modus gebruikt; `/vertalen` en `/agent-flow` geven toegang tot dezelfde stappen station-voor-station.
 
 ## Interview-modus (Station 1 — Begrijpen)
 

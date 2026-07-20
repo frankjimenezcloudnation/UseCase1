@@ -55,18 +55,20 @@ acceptatietesten — met de pensioendeskundigen als beslissers op elke inhoudeli
 
 **Ingangen (slash-commands):**
 
-- **`/begrijpen`** — start Station 1 (Begrijpen): de brainstorm-/begripsfase. Bouwt het
-  Use Case Canvas en zet onduidelijkheden om in geprioriteerde expertvragen. Gebruik dit
-  om de agents scherp te krijgen wat we met UC1 bedoelen, vóór er iets vertaald wordt.
-- **`/vertalen`** — start Station 2 (Vertalen): een team van 4 interpretatie-agents
-  (business, techniek, data/ontologie, compliance/risico) leest het Gate-1-canvas elk
-  vanuit hun eigen invalshoek; de vertaal-synthesizer voegt dat samen tot één
-  geconsolideerde deliverables-tabel en markeert waar de lenzen botsen als divergentie.
-  Via een vertaalchat met de gebruiker worden die divergenties opgelost — nooit door een
-  agent zelf. Resultaat: twee documenten — een volledige technische tabel voor de
-  dev-agents, en een korte samenvatting voor de business-mensen.
-- **`/agent-flow`** — de volledige orkestratie over alle stations (begrijpen → vertalen →
-  specificeren → DoD & testen → beheer), met gate-handhaving en outputvalidatie.
+- **`/begrijpen`** — **de hoofdingang**: één doorlopende sessie. Je levert je informatie,
+  spart met het agent-team (zij stellen vragen, jij antwoordt en legt uit) tot je zegt dat
+  je **klaar** bent, en daarna doorlopen de agents de hele flow grondig (begrijpen →
+  vertalen → specificeren → DoD & testen) en leveren alle deliverables op — met wat nog
+  door deskundigen bevestigd moet worden expliciet gemarkeerd.
+- **`/vertalen`** — spring direct naar Station 2 (Vertalen), als het canvas al door Gate 1
+  is: een team van 4 interpretatie-agents (business, techniek, data/ontologie,
+  compliance/risico) leest het canvas elk vanuit hun eigen invalshoek; de
+  vertaal-synthesizer voegt dat samen tot één geconsolideerde deliverables-tabel en
+  markeert waar de lenzen botsen als divergentie. Die divergenties worden via een
+  vertaalchat opgelost — nooit door een agent zelf. Resultaat: een volledige technische
+  tabel voor de dev-agents én een korte samenvatting voor de business-mensen.
+- **`/agent-flow`** — dezelfde flow, maar station-voor-station met een gate-pauze na elk
+  station, voor wie stap voor stap meer controle wil.
 
 **Structuur:**
 
