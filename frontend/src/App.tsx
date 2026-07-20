@@ -1,5 +1,6 @@
 import { Box, Container, Flex, Text } from "@chakra-ui/react";
 import { ComparisonPage } from "@/pages/ComparisonPage";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function App() {
   return (
@@ -23,7 +24,9 @@ export default function App() {
       </Flex>
 
       <Container maxW="5xl" py={{ base: 8, md: 12 }}>
-        <ComparisonPage />
+        <ErrorBoundary>
+          <ComparisonPage />
+        </ErrorBoundary>
       </Container>
 
       <Box as="footer" textAlign="center" py={8} color="fg.muted" fontSize="xs">

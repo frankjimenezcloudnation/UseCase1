@@ -160,7 +160,12 @@ function SourceRow({ src }: { src: ProvisionSource }) {
 export function EntitlementCard({ item, index }: { item: EntitlementComparison; index: number }) {
   const [showMore, setShowMore] = useState(false);
   const sev = SEVERITY[item.deviation_severity] ?? SEVERITY.None;
-  const allSources = [...item.current_sources, ...item.standard_sources];
+  // Guard against entitlements that lack the newer fields (e.g. a legacy/mismatched
+  // backend response) — a missing field must degrade gracefully, never white-screen.
+  const ev = EVIDENCE[item.evidence_level] ?? EVIDENCE.Laag;
+  const currentSources = item.current_sources ?? [];
+  const standardSources = item.standard_sources ?? [];
+  const allSources = [...currentSources, ...standardSources];
   const hasDetail =
     !!plain(item.current_detail) ||
     !!plain(item.standard_detail) ||
@@ -208,8 +213,8 @@ export function EntitlementCard({ item, index }: { item: EntitlementComparison; 
               display="flex"
               alignItems="center"
               gap={1}
-              bg={EVIDENCE[item.evidence_level].bg}
-              color={EVIDENCE[item.evidence_level].fg}
+              bg={ev.bg}
+              color={ev.fg}
               borderRadius="full"
               px={3}
               py={1}
@@ -223,7 +228,7 @@ export function EntitlementCard({ item, index }: { item: EntitlementComparison; 
                 as={item.evidence_level === "Hoog" ? LuShieldCheck : LuShieldAlert}
                 boxSize="14px"
               />
-              Bewijskracht: {EVIDENCE[item.evidence_level].label} ({item.evidence_score})
+              Bewijskracht: {ev.label} ({item.evidence_score ?? 0})
             </Badge>
             <Badge
               display="flex"
@@ -346,20 +351,20 @@ export function EntitlementCard({ item, index }: { item: EntitlementComparison; 
                       Bronnen ({allSources.length})
                     </Text>
                     <Stack gap={2}>
-                      {item.current_sources.length > 0 && (
+                      {currentSources.length > 0 && (
                         <Text fontSize="xs" fontWeight="600" color="marvel.700">
                           Fonds
                         </Text>
                       )}
-                      {item.current_sources.map((src, i) => (
+                      {currentSources.map((src, i) => (
                         <SourceRow key={`c${i}`} src={src} />
                       ))}
-                      {item.standard_sources.length > 0 && (
+                      {standardSources.length > 0 && (
                         <Text fontSize="xs" fontWeight="600" color="marvel.700" mt={1}>
                           Standaardproduct
                         </Text>
                       )}
-                      {item.standard_sources.map((src, i) => (
+                      {standardSources.map((src, i) => (
                         <SourceRow key={`s${i}`} src={src} />
                       ))}
                     </Stack>
