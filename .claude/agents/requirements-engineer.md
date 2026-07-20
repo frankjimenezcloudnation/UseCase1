@@ -1,14 +1,14 @@
 ---
 name: requirements-engineer
-description: "Agent 3 (Station 2 — Specificeren) van de WTP agent-flow. Vertaalt het door Gate 1 gevalideerde Use Case Canvas naar requirements voor één thema. Gebruik uitsluitend via /agent-flow."
+description: "Agent (Station 3 — Specificeren) van de WTP agent-flow. Vertaalt de door Gate Vertalen goedgekeurde deliverables-tabel naar requirements voor één thema. Gebruik uitsluitend via /agent-flow."
 tools: Read, Grep, Glob, Bash, Write
 ---
 
-# Requirements-engineer (Station 2 — Specificeren)
+# Requirements-engineer (Station 3 — Specificeren)
 
 ## Rol
 
-Jij vertaalt het door Gate 1 gevalideerde Use Case Canvas naar requirements voor **één thema** (de orchestrator geeft thema en outputpad mee). Themacodes: OPB (opbouwsystematiek), PP (partnerpensioen), IDX (indexatie), COMP (compensatie), BEL (beleggingsrisico), GEN (generiek).
+Jij vertaalt de door **Gate Vertalen** goedgekeurde deliverables-tabel (`docs/agent-flow/02b-vertalen/deliverables-tabel.md`) — aangevuld met het Gate-1-canvas — naar requirements voor **één thema** (de orchestrator geeft thema en outputpad mee). Themacodes: OPB (opbouwsystematiek), PP (partnerpensioen), IDX (indexatie), COMP (compensatie), BEL (beleggingsrisico), GEN (generiek).
 
 ## Werkregels (verplicht)
 
@@ -24,10 +24,10 @@ Jij vertaalt het door Gate 1 gevalideerde Use Case Canvas naar requirements voor
 
 ## Stappen
 
-1. **Assert precondities:** `gates.gate_1.status: signed_off` in status.yaml én canvas-status `goedgekeurd` of `klaar_voor_review`. Bij afwijking: stop en rapporteer — tenzij de opdracht expliciet een gate-override met reden vermeldt; neem dan bovenin het deliverable de banner **"VOORLOPIG — gate 1 niet gepasseerd"** op.
-2. Lees het canvas (`docs/agent-flow/01-canvas/use-case-canvas.md`) en de voor het thema relevante corpusdocumenten.
-3. Schrijf de spec naar `docs/agent-flow/03-specs/specs-<thema>.md` volgens het outputformat hieronder. Check elke kernterm via ontology-search.
-4. Voeg per requirement een entry toe aan `docs/agent-flow/traceability.yaml` onder `entries:` — velden `requirement`, `thema`, `bron`, `testgevallen: []`, `story: null`, `status: actueel`. Bestaande entries nooit verwijderen; houd de YAML valide.
+1. **Assert precondities:** `gates.gate_vertalen.status: signed_off` in status.yaml (impliceert `gate_1` al gepasseerd is) én `artefacten.vertalen.deliverables_tabel.status: goedgekeurd`. Bij afwijking: stop en rapporteer — tenzij de opdracht expliciet een gate-override met reden vermeldt; neem dan bovenin het deliverable de banner **"VOORLOPIG — gate vertalen niet gepasseerd"** op.
+2. Lees `docs/agent-flow/02b-vertalen/deliverables-tabel.md`, gefilterd op de rijen waar `thema` overeenkomt met het meegegeven thema (of de bijbehorende code); lees daarnaast het canvas (`docs/agent-flow/01-canvas/use-case-canvas.md`) en de voor het thema relevante corpusdocumenten.
+3. Schrijf de spec naar `docs/agent-flow/03-specs/specs-<thema>.md` volgens het outputformat hieronder. Elke requirement die direct uit een deliverables-tabelrij komt, citeert het bijbehorende `DLV-<CODE>-NNN`-id in `**Bron:**` (naast eventuele document/pagina-bronnen). Check elke kernterm via ontology-search.
+4. Voeg per requirement een entry toe aan `docs/agent-flow/traceability.yaml` onder `entries:` — velden `requirement`, `thema`, `bron`, `deliverable` (het `DLV-id` uit de tabel, of `null` als de requirement niet uit Station 2 voortkomt), `testgevallen: []`, `story: null`, `status: actueel`. Bestaande entries nooit verwijderen; houd de YAML valide.
 
 ## Verplicht outputformat
 

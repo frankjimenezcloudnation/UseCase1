@@ -48,32 +48,44 @@ always demonstrable (the UI shows which mode ran).
 
 ## Agent-flow (voor het verfijnen van de tool)
 
-Een Claude Code multi-agent workflow die de use case gecontroleerd vertaalt naar
-specificaties, een Definition of Done en acceptatietesten — met de pensioendeskundigen
-als beslissers op elke inhoudelijke stap. **4 stations, 7 agents, 3 human gates.**
+Een Claude Code multi-agent workflow die de use case gecontroleerd vertaalt naar een
+geconsolideerde deliverables-tabel, specificaties, een Definition of Done en
+acceptatietesten — met de pensioendeskundigen als beslissers op elke inhoudelijke stap.
+**5 stations, 12 agents, 4 human gates.**
 
 **Ingangen (slash-commands):**
 
 - **`/begrijpen`** — start Station 1 (Begrijpen): de brainstorm-/begripsfase. Bouwt het
   Use Case Canvas en zet onduidelijkheden om in geprioriteerde expertvragen. Gebruik dit
-  om de agents scherp te krijgen wat we met UC1 bedoelen, vóór er iets gespecificeerd wordt.
-- **`/agent-flow`** — de volledige orkestratie over alle stations (begrijpen → specificeren
-  → DoD & testen → beheer), met gate-handhaving en outputvalidatie.
+  om de agents scherp te krijgen wat we met UC1 bedoelen, vóór er iets vertaald wordt.
+- **`/vertalen`** — start Station 2 (Vertalen): een team van 4 interpretatie-agents
+  (business, techniek, data/ontologie, compliance/risico) leest het Gate-1-canvas elk
+  vanuit hun eigen invalshoek; de vertaal-synthesizer voegt dat samen tot één
+  geconsolideerde deliverables-tabel en markeert waar de lenzen botsen als divergentie.
+  Via een vertaalchat met de gebruiker worden die divergenties opgelost — nooit door een
+  agent zelf. Resultaat: twee documenten — een volledige technische tabel voor de
+  dev-agents, en een korte samenvatting voor de business-mensen.
+- **`/agent-flow`** — de volledige orkestratie over alle stations (begrijpen → vertalen →
+  specificeren → DoD & testen → beheer), met gate-handhaving en outputvalidatie.
 
 **Structuur:**
 
 - `.claude/skills/agent-flow/` — de orchestrator-skill (`SKILL.md`) + `references/`
   (`flow-state.md` = state-schema & routing, `output-contracts.md` = validatiecontracten).
-- `.claude/agents/` — de 7 agent-definities (context-analyst, domain-interviewer,
-  requirements-engineer, ontology-guardian, dod-composer, test-designer, red-team-critic).
-- `.claude/commands/begrijpen.md` — de `/begrijpen`-ingang.
-- `docs/agent-flow/` — deliverables (canvas, vragen, specs, DoD, tests, red-team),
-  `status.yaml` (gate-/flow-state, bron van waarheid) en `traceability.yaml`.
+- `.claude/agents/` — de 12 agent-definities: context-analyst, domain-interviewer
+  (Station 1); business-analist, technisch-architect, data-ontologie, compliance-risico,
+  vertaal-synthesizer (Station 2); requirements-engineer, ontology-guardian (Station 3);
+  dod-composer, test-designer, red-team-critic (Station 4).
+- `.claude/commands/` — de `/begrijpen`- en `/vertalen`-ingangen.
+- `docs/agent-flow/` — deliverables (canvas, vragen, vertaling/deliverables-tabel, specs,
+  DoD, tests, red-team), `status.yaml` (gate-/flow-state, bron van waarheid) en
+  `traceability.yaml`.
 - `scripts/doc_tools.py` — teksttoegang tot binaire bronnen (ontologie-zoeken, DOCX/XLSX),
   draait op `backend/.venv/bin/python` (geen extra dependencies).
 - `context/` — lokale broncontext (projectcontext + spec), **gitignored**; niet gepusht.
 
 Principes: de mens beslist en de agent bereidt voor; elke bevinding is traceerbaar naar een
-bron; `OntologySnapshot.xlsx` is de gedeelde taal; en recente stakeholderinput wint van het
-contextdocument. `.md`/`.yaml` uit deze flow worden nooit door de analyse-pipeline ingelezen
-(die scant alleen `.pdf/.docx/.xlsx` in de repo-root en `uploads/`).
+bron; `OntologySnapshot.xlsx` is de gedeelde taal; recente stakeholderinput wint van het
+contextdocument; en een divergentie tussen interpretatie-lenzen wordt nooit stilzwijgend
+opgelost — alleen de gebruiker beslist. `.md`/`.yaml` uit deze flow worden nooit door de
+analyse-pipeline ingelezen (die scant alleen `.pdf/.docx/.xlsx` in de repo-root en `uploads/`).

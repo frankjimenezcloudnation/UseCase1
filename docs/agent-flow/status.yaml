@@ -10,6 +10,16 @@ spec_document: context/implementatieplan-agent-flow.md
 artefacten:
   canvas: { status: ontbreekt, pad: docs/agent-flow/01-canvas/use-case-canvas.md, laatst_bijgewerkt: null }
   vragen: { status: ontbreekt, laatst_bijgewerkt: null }
+  # Station 2 — Vertalen: 4 parallelle lens-interpretaties + de door de synthesizer geschreven
+  # deliverables-tabel (bron van waarheid) en -samenvatting (afgeleid, voor mensen).
+  vertalen:
+    interpretaties:
+      business:   { status: ontbreekt, pad: docs/agent-flow/02b-vertalen/interpretaties/interpretatie-business.md,   laatst_bijgewerkt: null }
+      techniek:   { status: ontbreekt, pad: docs/agent-flow/02b-vertalen/interpretaties/interpretatie-techniek.md,   laatst_bijgewerkt: null }
+      data:       { status: ontbreekt, pad: docs/agent-flow/02b-vertalen/interpretaties/interpretatie-data.md,       laatst_bijgewerkt: null }
+      compliance: { status: ontbreekt, pad: docs/agent-flow/02b-vertalen/interpretaties/interpretatie-compliance.md, laatst_bijgewerkt: null }
+    deliverables_tabel:        { status: ontbreekt, pad: docs/agent-flow/02b-vertalen/deliverables-tabel.md,        open_divergenties: 0, laatst_bijgewerkt: null }
+    deliverables_samenvatting: { status: ontbreekt, pad: docs/agent-flow/02b-vertalen/deliverables-samenvatting.md, laatst_bijgewerkt: null }
   # DoD wordt per thema geproduceerd (dod-<thema>.md), dus per-thema getrackt — net als gate_2.themas.
   dod:
     themas:
@@ -26,6 +36,10 @@ artefacten:
 
 gates:
   gate_1:
+    status: open            # open | signed_off
+    signed_off_by: []
+    datum: null
+  gate_vertalen:            # Station 2 — Vertalen. Sluit aan ná gate_1, vóór gate_2.
     status: open            # open | signed_off
     signed_off_by: []
     datum: null

@@ -120,3 +120,54 @@ De orchestrator valideert elk agent-deliverable tegen dit contract voordat het a
 - `grep -Eq "^### RTC-[0-9]{3}" <bestand>`.
 - Aantal `RTC-`-koppen == aantal `**Ernst:**` == aantal `**Aanbeveling:**`.
 - `grep -Eq "Ernst:.*\b(kritisch|hoog|middel|laag)\b" <bestand>`.
+
+---
+
+## 10. Lens-interpretaties (`docs/agent-flow/02b-vertalen/interpretaties/interpretatie-<lens>.md`)
+
+**Verplichte structuur** (geldt voor alle 4 lenzen — business, techniek, data, compliance):
+- Kop `# Interpretatie — <lens>`.
+- `## Interpretaties`-tabel gekeyd op canvas-referentie, minimaal 1 datarij.
+- Staartregel (universele regel).
+
+**Automatische checks:**
+- `grep -q "^# Interpretatie" <bestand>` en `grep -q "^## Interpretaties" <bestand>`.
+- Minimaal 1 datarij: `[ "$(grep -c '^|' <bestand>)" -ge 2 ]` (header + scheidingsregel + ≥1 datarij).
+- Staartregel + `(illustratief)`-regel (universeel, zie boven).
+
+---
+
+## 11. Deliverables-tabel (`docs/agent-flow/02b-vertalen/deliverables-tabel.md`) — bron van waarheid
+
+**Verplichte structuur:**
+- Kop bevat `Status: concept`, `Status: klaar_voor_review` of `Status: goedgekeurd`.
+- H2's in volgorde: `## Deliverables`, `## Divergenties en openstaande vertaalkeuzes`, `## Signaleringen`, `## Open vragen en aannames`.
+- `Deliverables`-tabel met exact deze 10 kolommen: `business-req | afgestemde interpretatie | deliverable | technische vertaling | thema | prioriteit | owner/dev-agent | afhankelijkheden | acceptatiecriterium | status`.
+- `deliverable`-cel bevat een `DLV-(OPB|PP|IDX|COMP|BEL|GEN)-[0-9]{3}`-id; `thema` ∈ de 6 codes; `prioriteit` ∈ Must/Should/Could/Won't; rij-`status` ∈ divergent/afgestemd/definitief.
+- Elke `### DIV-NNN`-entry heeft: `**Betrokken deliverable(s):**`, `**Lenzen in conflict:**`, `**Type:**`, `**Standpunt per lens:**`, `**Vertaalkeuze voor de mens:**`, `**Status:**` (open/besloten), en bij `besloten` een `**Besluit:**`-veld met attributie.
+
+**Automatische checks:**
+- Header-rij: `grep -Eq '^\| *business-req *\|.*\| *status *\|' <bestand>`.
+- Kolomtelling op de headerrij: 11 pipes (10 kolommen) — `[ "$(grep -m1 '^| *business-req' <bestand> | grep -o '|' | wc -l)" -eq 11 ]`.
+- `thema`-waarden: elke waarde in de thema-kolom ∈ {opbouwsystematiek, partnerpensioen, indexatie, compensatie, beleggingsrisico, generiek} of de code OPB/PP/IDX/COMP/BEL/GEN.
+- `prioriteit` ∈ MoSCoW: `grep -Eq "Must|Should|Could|Won't" <bestand>`.
+- `DLV-`-ids uniek als **definiërend** voorkomen (de `deliverable`-kolom, waar het ID gevolgd wordt door een streepje `— `): `[ "$(grep -Eo 'DLV-(OPB|PP|IDX|COMP|BEL|GEN)-[0-9]{3} —' <bestand> | sort -u | wc -l)" = "$(grep -Eo 'DLV-(OPB|PP|IDX|COMP|BEL|GEN)-[0-9]{3} —' <bestand> | wc -l)" ]`. Let op: match **specifiek** op `<id> —` (ID + spatie + streepje), niet los `DLV-...-NNN` — een DLV-id mag legitiem terugkomen in de `afhankelijkheden`-kolom van een andere rij (als bare ID, zonder streepje); die kruisverwijzingen zijn geen duplicaat en mogen de check niet laten falen.
+- DIV-veldgelijkheid: aantal `### DIV-` == aantal `**Status:**` binnen de divergentie-sectie.
+- **Open-divergentietelling voor de gate:** `open_divergenties` in `status.yaml` moet gelijk zijn aan `grep -c '\*\*Status:\*\* open' <bestand>` binnen de divergentie-sectie — de orchestrator berekent dit bij elke statusupdate, niet de agent.
+- Staartregel + `(illustratief)`-regel (universeel).
+
+---
+
+## 12. Deliverables-samenvatting (`docs/agent-flow/02b-vertalen/deliverables-samenvatting.md`) — mensen, afgeleid
+
+**Verplichte structuur:**
+- H2's in volgorde: `## In één oogopslag`, `## Per thema`, `## Nog te besluiten`, `## Open vragen en aannames`.
+- Citeert expliciet de bron: bevat de tekst `deliverables-tabel.md`.
+- Kort & krachtig — geen harde lengte-eis, maar een informele richtlijn: waarschuw (niet blokkeren) als het document > ~60 regels is.
+- **Geen uitzondering op de staartregel** — ook dit document eindigt met `## Open vragen en aannames` (een uitzondering zou zelf een vorm van drift zijn); "Nog te besluiten" bevat de inhoudelijke open keuzes.
+
+**Automatische checks:**
+- Alle 4 H2's aanwezig (`grep -q` per kop).
+- Bron-citatie: `grep -q "deliverables-tabel.md" <bestand>`.
+- Sync met de bron: de telling onder "Nog te besluiten" (aantal opsomming-items in die sectie) moet 0 zijn wanneer `deliverables-tabel.md`'s `open_divergenties` 0 is — bij een gate-sign-off-poging is dit een harde check; buiten de gate een zachte waarschuwing.
+- Staartregel (universeel).

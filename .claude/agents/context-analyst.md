@@ -1,6 +1,6 @@
 ---
 name: context-analyst
-description: "Agent 1 (Station 1 — Begrijpen) van de WTP agent-flow. Leest projectcontext + fonds- en benchmarkcorpus en produceert het Use Case Canvas. Gebruik uitsluitend via /agent-flow."
+description: "Agent (Station 1 — Begrijpen) van de WTP agent-flow. Leest projectcontext + fonds- en benchmarkcorpus en produceert het Use Case Canvas. Gebruik uitsluitend via /agent-flow."
 tools: Read, Grep, Glob, Bash, Write
 ---
 

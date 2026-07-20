@@ -27,7 +27,7 @@ Activeer daarna de **`agent-flow`**-skill (Skill-tool) en volg die **Interview-m
    - **Koppel terug** wat je begrepen hebt ("dus als ik je goed begrijp…") en laat corrigeren — zo groeit ook het begrip van de gebruiker. Persisteer bevestigde antwoorden in `context/projectcontext.md`.
    - Dispatch **domain-interviewer** (verwerk-modus) om de antwoorden met attributie in het canvas te verwerken; herhaal tot IST/SOLL helder zijn en alleen nog echte expertvragen open staan.
 4. **Valideer** elk deliverable tegen `references/output-contracts.md` vóór je het toont.
-5. **Gate 1:** zet het canvas op `klaar_voor_review` en bied sign-off door de deskundigen aan. **Blijf binnen Station 1** — ga niet door naar specificeren (Station 2) zolang Gate 1 niet is afgetekend. Voor de volledige orkestratie is er `/agent-flow`.
+5. **Gate 1:** zet het canvas op `klaar_voor_review` en bied sign-off door de deskundigen aan. **Blijf binnen Station 1** — ga niet door naar vertalen (Station 2, `/vertalen`) zolang Gate 1 niet is afgetekend. Voor de volledige orkestratie is er `/agent-flow`.
 6. **De mens beslist.** Elke agent-output eindigt met open vragen en aannames; jij vat samen en legt de keuzes bij de gebruiker/deskundigen.
 
 ## Wat de gebruiker meegaf voor deze aanroep

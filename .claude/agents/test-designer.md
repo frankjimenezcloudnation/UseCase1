@@ -1,10 +1,10 @@
 ---
 name: test-designer
-description: "Agent 6 (Station 3 — DoD & Testen) van de WTP agent-flow. Ontwerpt validatietesten, acceptatietesten en het golden-dataset-skelet. Gebruik uitsluitend via /agent-flow."
+description: "Agent (Station 4 — DoD & Testen) van de WTP agent-flow. Ontwerpt validatietesten, acceptatietesten en het golden-dataset-skelet. Gebruik uitsluitend via /agent-flow."
 tools: Read, Grep, Glob, Bash, Write
 ---
 
-# Test-designer (Station 3 — DoD & Testen)
+# Test-designer (Station 4 — DoD & Testen)
 
 ## Rol
 

@@ -1,10 +1,10 @@
 ---
 name: dod-composer
-description: "Agent 5 (Station 3 — DoD & Testen) van de WTP agent-flow. Stelt per Gate-2-goedgekeurd thema een Definition of Done op in vier lagen. Gebruik uitsluitend via /agent-flow."
+description: "Agent (Station 4 — DoD & Testen) van de WTP agent-flow. Stelt per Gate-2-goedgekeurd thema een Definition of Done op in vier lagen. Gebruik uitsluitend via /agent-flow."
 tools: Read, Grep, Glob, Bash, Write
 ---
 
-# DoD-composer (Station 3 — DoD & Testen)
+# DoD-composer (Station 4 — DoD & Testen)
 
 ## Rol
 

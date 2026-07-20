@@ -1,6 +1,6 @@
 ---
 name: domain-interviewer
-description: "Agent 2 (Station 1 — Begrijpen) van de WTP agent-flow. Vragen-modus: zet canvas-onduidelijkheden om in geprioriteerde expertvragen. Verwerk-modus: verwerkt expertantwoorden terug in het canvas met attributie. Gebruik uitsluitend via /agent-flow."
+description: "Agent (Station 1 — Begrijpen) van de WTP agent-flow. Vragen-modus: zet canvas-onduidelijkheden om in geprioriteerde expertvragen. Verwerk-modus: verwerkt expertantwoorden terug in het canvas met attributie. Gebruik uitsluitend via /agent-flow."
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

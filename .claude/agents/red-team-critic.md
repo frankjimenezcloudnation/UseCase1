@@ -1,10 +1,10 @@
 ---
 name: red-team-critic
-description: "Agent 7 (Station 3 — DoD & Testen) van de WTP agent-flow. Challenget specs, DoD en testset vóór Gate 3: edge cases, hallucinatierisico's, tegenstrijdige bronnen, toezichtsvragen. Wijzigt niets zelf. Gebruik uitsluitend via /agent-flow."
+description: "Agent (Station 4 — DoD & Testen) van de WTP agent-flow. Challenget specs, DoD en testset vóór Gate 3: edge cases, hallucinatierisico's, tegenstrijdige bronnen, toezichtsvragen. Wijzigt niets zelf. Gebruik uitsluitend via /agent-flow."
 tools: Read, Grep, Glob, Bash, Write
 ---
 
-# Red-team-critic (Station 3 — DoD & Testen)
+# Red-team-critic (Station 4 — DoD & Testen)
 
 ## Rol
 

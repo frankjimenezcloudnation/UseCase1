@@ -1,9 +1,12 @@
-# Traceability-matrix (Station 4): requirement ↔ thema ↔ bron ↔ testgeval ↔ story.
+# Traceability-matrix (Station 5 — Beheer): requirement ↔ thema ↔ bron ↔ testgeval ↔ story.
 # Gevuld door requirements-engineer (REQ-entries) en test-designer (testgevallen-koppeling).
+# Join met de Station-2-deliverables-tabel (docs/agent-flow/02b-vertalen/deliverables-tabel.md)
+# via het veld `deliverable`: DLV-<CODE>-NNN | null. Zo wordt de trace DLV -> REQ -> TST.
 # Entry-schema:
 #   - requirement: REQ-<CODE>-NNN     # CODE: OPB|PP|IDX|COMP|BEL|GEN
 #     thema: opbouwsystematiek | partnerpensioen | indexatie | compensatie | beleggingsrisico | generiek
 #     bron: "document, artikel/paragraaf, pagina" of "besloten door <naam>, sessie <datum>"
+#     deliverable: DLV-<CODE>-NNN | null   # verwijzing naar de deliverables-tabel (Station 2), indien van toepassing
 #     testgevallen: []                # TST-VAL-NNN / TST-ACC-NNN
 #     story: null                     # backlog-referentie, later
 #     status: actueel                 # actueel | verouderd
